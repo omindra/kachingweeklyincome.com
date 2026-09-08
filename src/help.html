@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Help &amp; Glossary — Kaching Weekly Income</title>
+<meta name="description" content="Plain-language explanation of the Kaching weekly income options strategy and a glossary of the terms used on the dashboard."/>
+<link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="site-brand">
+        <div class="mark">💰</div>
+        <div>
+            <div class="name">Kaching Weekly Income</div>
+            <div class="tag">Weekly options income tracker</div>
+        </div>
+    </div>
+    <nav class="site-nav">
+        <a href="./index.html">Dashboard</a>
+        <a href="./help.html" class="active">Help &amp; Glossary</a>
+    </nav>
+</header>
+
+<div class="page-wrap" style="max-width:820px">
+
+    <section class="help-section">
+        <h2>What is the Kaching Weekly Income Strategy?</h2>
+        <p>
+            This is a two-leg options position built on a single stock, designed
+            to generate income on a recurring, weekly basis:
+        </p>
+        <ul>
+            <li><strong>One long-dated put, bought once.</strong> This is the
+                "insurance" leg — it puts a floor under how much you can lose
+                if the stock drops significantly. It's bought roughly
+                90&ndash;150 days out (this tool specifically targets around
+                120 days), so it doesn't need to be replaced often.</li>
+            <li><strong>One short-dated put, sold weekly.</strong> This is the
+                "income" leg — sold fresh every week, expiring in about
+                5&ndash;12 days. Most weeks it simply expires worthless, and
+                you keep the money you were paid for selling it.</li>
+        </ul>
+        <p>
+            The two legs work together: the weekly leg is what pays you, and
+            the long-dated leg is what keeps a bad week from turning into a
+            disaster. As long as the long-dated leg is in place, you can keep
+            selling a new weekly leg indefinitely.
+        </p>
+    </section>
+
+    <section class="help-section">
+        <h2>The actual numbers this tool uses</h2>
+        <ul>
+            <li><strong>Long leg (insurance): 90&ndash;150 days to
+                expiration</strong>, targeting ~120 days specifically, at
+                roughly a <strong>25% delta</strong> — meaning the option is
+                priced as if it has roughly a 25% chance of ending up
+                valuable. Lower delta = cheaper insurance, but less
+                protection; higher delta costs more but protects more.</li>
+            <li><strong>Short leg (income): 5&ndash;12 days to
+                expiration.</strong> The strike sold depends on how the stock
+                is trending: closer to the current price (higher delta, more
+                premium, more risk) when the trend looks favorable, further
+                away (lower delta, less premium, less risk) when it
+                doesn't.</li>
+            <li><strong>Position sizing:</strong> keeping any single position
+                to a small slice of the total account (commonly cited around
+                3&ndash;5%) means no single trade going wrong can meaningfully
+                damage the whole account.</li>
+        </ul>
+    </section>
+
+    <section class="help-section">
+        <h2>What happens week to week</h2>
+        <p>
+            Most weeks are uneventful by design: the short put expires
+            worthless, you keep the premium, and you sell a new one for the
+            following week.
+        </p>
+        <p>Two things can happen that call for an adjustment, both totally
+            normal and expected, not signs of a problem:</p>
+        <ul>
+            <li><strong>The stock drops and the short put is now in danger of
+                finishing in-the-money.</strong> The usual response is to buy
+                back that put (at a loss on that leg alone) and immediately
+                sell a new one further out — called <strong>rolling</strong>.
+                The premium from the new sale is generally enough to offset
+                most or all of the loss from closing the old one, and the
+                long-dated insurance leg is simultaneously gaining value to
+                help offset the damage too.</li>
+            <li><strong>The stock jumps and the short put quickly loses most
+                of its value.</strong> If the short leg's delta drops below
+                the long leg's delta, it's usually not worth holding onto for
+                the rest of the week just to collect the last few cents of
+                premium — this is called being <strong>ready to double
+                dip</strong>: close the now-cheap short put early and
+                immediately sell a new one, effectively collecting two weeks
+                of premium in a single week.</li>
+        </ul>
+    </section>
+
+    <section class="help-section">
+        <h2>Glossary — terms you'll see on this site</h2>
+        <table class="glossary-table">
+            <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+            <tbody>
+                <tr><td>Strike</td><td>The specific price written into an option contract.</td></tr>
+                <tr><td>Premium</td><td>The price paid (or received) for an option contract.</td></tr>
+                <tr><td>DTE</td><td>"Days to expiration" — how many days remain before a contract expires.</td></tr>
+                <tr><td>Delta</td><td>Roughly, the odds an option ends up valuable, and how much its price moves per $1 move in the stock. A 25-delta option behaves like it has roughly a 25% chance of finishing valuable.</td></tr>
+                <tr><td>Theta</td><td>How much value an option loses purely from time passing, even with no price movement. This is the mechanism that makes selling short-dated options for income work at all — you're being paid for time decay.</td></tr>
+                <tr><td>Gamma</td><td>How fast Delta itself changes as the stock moves. Highest for options trading right at the current stock price.</td></tr>
+                <tr><td>Vega</td><td>How sensitive an option's price is to changes in implied volatility (see IV Rank below).</td></tr>
+                <tr><td>IV Rank</td><td>Whether options on a stock are currently expensive or cheap to trade, <em>relative to that same stock's own recent history</em> — not compared to other stocks.</td></tr>
+                <tr><td>Assignment</td><td>What happens if you've sold a put and the buyer exercises it — you're required to buy the shares at the strike price. Can happen anytime after selling, though it's most common near expiration when the option is meaningfully in-the-money.</td></tr>
+                <tr><td>Rolling</td><td>Closing this week's short put early and opening a new one — a routine, planned adjustment, not an emergency measure.</td></tr>
+                <tr><td>Double dip</td><td>When the weekly short put loses most of its value early (the stock rallied), closing it early and selling a fresh one — collecting two premiums from the same underlying position in one week.</td></tr>
+                <tr><td>Laggard</td><td>A stock that's underperformed the broader market recently. Often the starting point for a new candidate, since a laggard that's stabilizing can make a good setup.</td></tr>
+                <tr><td>RSI</td><td>A common technical indicator measuring whether a stock has recently been oversold or overbought.</td></tr>
+                <tr><td>MACD</td><td>A common technical indicator used to spot when a stock's momentum is turning up or down.</td></tr>
+                <tr><td><span class="ke-signal kaching-put" style="cursor:default">KACHING PUT</span></td><td>This site's label for "a strong candidate to open a new position on, right now."</td></tr>
+                <tr><td><span class="ke-signal watch" style="cursor:default">WATCH</span></td><td>Promising, but not quite meeting the bar for a fresh entry yet.</td></tr>
+                <tr><td><span class="ke-signal wait" style="cursor:default">WAIT</span></td><td>Not currently an attractive candidate.</td></tr>
+                <tr><td><span class="ke-signal too-extended" style="cursor:default">TOO EXTENDED</span></td><td>The stock has already moved up a lot recently — a new entry today would be chasing a move that's largely already played out.</td></tr>
+                <tr><td><span class="ke-signal falling-knife" style="cursor:default">FALLING KNIFE</span></td><td>Cheap, but still actively dropping with no sign of stabilizing — a warning, not a buy signal.</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="help-section">
+        <div class="disclaimer-box">
+            Everything on this site is for informational and educational
+            purposes only. It is not financial advice, and nothing here is a
+            recommendation to buy or sell any security. Options trading
+            carries real risk, including the risk of loss. Always do your
+            own research and consider speaking with a licensed financial
+            professional before trading.
+        </div>
+    </section>
+
+</div>
+
+<footer class="site-footer">
+    Kaching Weekly Income · Informational and educational purposes only — not financial advice.<br/>
+    <a href="./index.html">← Back to Dashboard</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Kaching Weekly Income — Dashboard</title>
+<meta name="description" content="A weekly options income strategy dashboard: which stocks look like good candidates right now, and the current active trade plans."/>
+<link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="site-brand">
+        <div class="mark">💰</div>
+        <div>
+            <div class="name">Kaching Weekly Income</div>
+            <div class="tag">Weekly options income tracker</div>
+        </div>
+    </div>
+    <nav class="site-nav">
+        <a href="./index.html" class="active">Dashboard</a>
+        <a href="./help.html">Help &amp; Glossary</a>
+    </nav>
+</header>
+
+<div class="page-wrap">
+
+    <div class="page-desc">
+        This page tracks candidates for a simple options income idea: sell a
+        put option every week and collect the payment, while a separate,
+        longer-lasting put option protects against a big drop. New to this?
+        Read the <a href="./help.html">Help &amp; Glossary</a> page first —
+        it explains the strategy and every term used below in plain language.
+        This is a research/tracking tool only — nothing here is financial
+        advice, and nothing is traded automatically.
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="scanner">🔎 Scanner</button>
+        <button class="tab-btn" data-tab="plans">📐 Active Plans</button>
+    </div>
+
+    <!-- ── Scanner tab ─────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="pane-scanner">
+        <div class="meta-line" id="scanner-meta">Loading…</div>
+        <div id="earnings-banner" style="display:none"></div>
+        <div id="scanner-results"></div>
+    </div>
+
+    <!-- ── Diagonal Plans tab ──────────────────────────────────────── -->
+    <div class="tab-pane" id="pane-plans">
+        <div class="meta-line" id="plans-meta">Loading…</div>
+
+        <div id="universe-title" class="page-desc" style="margin-bottom:8px;font-weight:600"></div>
+        <div class="universe-grid" id="universe-badges"></div>
+
+        <div id="plans-title" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px"></div>
+        <div id="plans-results"></div>
+    </div>
+
+</div>
+
+<footer class="site-footer">
+    Kaching Weekly Income · Informational and educational purposes only — not financial advice.<br/>
+    <a href="./help.html">Help &amp; Glossary</a>
+</footer>
+
+<script src="./app.js"></script>
+</body>
+</html>
