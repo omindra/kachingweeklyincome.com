@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     loadScanner();
     loadPlans();
+
+    // Scanner "Plans →" links jump to the Plans tab filtered to that ticker.
+    document.getElementById('scanner-results').addEventListener('click', (e) => {
+        const link = e.target.closest('.ke-plans-link');
+        if (!link) return;
+        e.preventDefault();
+        showPlansForTicker(link.dataset.ticker);
+    });
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────
@@ -99,6 +107,7 @@ function renderScannerTable(candidates) {
         '<th>Laggard</th><th>RSI</th><th>MACD</th><th>Trend</th>' +
         '<th>RS vs SPY</th><th>IV Rank</th><th>Liquidity</th>' +
         '<th title="Days to next earnings — sector ETFs have none">Earnings</th>' +
+        '<th>Plans</th>' +
         '</tr></thead><tbody>' +
         sorted.map(scannerRowHtml).join('') +
         '</tbody></table></div>';
@@ -135,6 +144,8 @@ function scannerRowHtml(c) {
         '<td>' + ivCell(c) + '</td>' +
         '<td>' + c.liquidityScore.toFixed(1) + '/5</td>' +
         '<td>' + earningsCell(c) + '</td>' +
+        '<td><a href="#" class="ke-plans-link" data-ticker="' + escapeHtml(c.ticker) +
+            '" title="Show active plans for ' + escapeHtml(c.ticker) + '">Plans →</a></td>' +
         '</tr>';
 }
 
@@ -203,6 +214,9 @@ function signalClass(signal) {
 
 // ── Plans tab (universe badges + Active Diagonal Weekly Plans) ────────
 
+let allPlans = [];
+let plansFilterTicker = null;
+
 async function loadPlans() {
     const meta = document.getElementById('plans-meta');
     try {
@@ -211,9 +225,9 @@ async function loadPlans() {
         const body = await res.json();
         const data = body.data || {};
         const badges = data.universeBadges || [];
-        const plans  = data.diagonalPlans || [];
+        allPlans = data.diagonalPlans || [];
         renderUniverseBadges(badges, data.universeCount);
-        renderPlansTable(plans);
+        renderPlansTable(allPlans);
         meta.textContent = body.exportedAt
             ? 'Data as of ' + new Date(body.exportedAt).toLocaleString()
             : '';
@@ -222,6 +236,18 @@ async function loadPlans() {
         document.getElementById('plans-results').innerHTML =
             '<div class="ke-empty">Data isn\'t available yet — check back soon.</div>';
     }
+}
+
+/** Jump to the Plans tab, filtered down to a single ticker's active plans. */
+function showPlansForTicker(ticker) {
+    plansFilterTicker = ticker;
+    switchTab('plans');
+    renderPlansTable(allPlans);
+}
+
+function clearPlansFilter() {
+    plansFilterTicker = null;
+    renderPlansTable(allPlans);
 }
 
 function renderUniverseBadges(badges, universeCount) {
@@ -290,23 +316,44 @@ function badgeHtml(b) {
         '</div>';
 }
 
-function renderPlansTable(plans) {
+function renderPlansTable(allPlansForTab) {
     const wrap = document.getElementById('plans-results');
     const title = document.getElementById('plans-title');
+
+    const plans = plansFilterTicker
+        ? allPlansForTab.filter(p => p.ticker === plansFilterTicker)
+        : allPlansForTab;
+
+    const filterHtml = plansFilterTicker
+        ? '<div class="plans-filter-banner">Showing active plans for <strong>' +
+            escapeHtml(plansFilterTicker) + '</strong> only — ' +
+            '<a href="#" id="plans-filter-clear">clear filter</a></div>'
+        : '';
+
+    title.textContent = plansFilterTicker
+        ? '📐 Active Diagonal Weekly Plans — ' + plans.length + ' matching ' + plansFilterTicker
+        : '📐 Active Diagonal Weekly Plans — ' + plans.length + ' candidates';
+
     if (!plans.length) {
-        title.textContent = '📐 Active Diagonal Weekly Plans — 0 candidates';
-        wrap.innerHTML = '<div class="ke-empty">No active plans right now — check back soon.</div>';
-        return;
+        wrap.innerHTML = filterHtml + '<div class="ke-empty">' +
+            (plansFilterTicker ? 'No active plans for ' + escapeHtml(plansFilterTicker) + ' right now.'
+                                : 'No active plans right now — check back soon.') +
+            '</div>';
+    } else {
+        wrap.innerHTML = filterHtml +
+            '<div class="plans-table-wrap"><table class="plans-table"><thead><tr>' +
+            '<th>Ticker</th><th>Score</th><th>Long Put (insurance)</th><th>Short Put (income)</th>' +
+            '<th style="text-align:right">Net Debit</th><th style="text-align:right">Max P/L</th>' +
+            '<th style="text-align:right">B/E</th><th style="text-align:right">R:R</th><th>Generated</th>' +
+            '</tr></thead><tbody>' +
+            plans.map(planRowHtml).join('') +
+            '</tbody></table></div>';
     }
-    title.textContent = '📐 Active Diagonal Weekly Plans — ' + plans.length + ' candidates';
-    wrap.innerHTML =
-        '<div class="plans-table-wrap"><table class="plans-table"><thead><tr>' +
-        '<th>Ticker</th><th>Score</th><th>Long Put (insurance)</th><th>Short Put (income)</th>' +
-        '<th style="text-align:right">Net Debit</th><th style="text-align:right">Max P/L</th>' +
-        '<th style="text-align:right">B/E</th><th style="text-align:right">R:R</th><th>Generated</th>' +
-        '</tr></thead><tbody>' +
-        plans.map(planRowHtml).join('') +
-        '</tbody></table></div>';
+
+    if (plansFilterTicker) {
+        const clear = document.getElementById('plans-filter-clear');
+        if (clear) clear.addEventListener('click', (e) => { e.preventDefault(); clearPlansFilter(); });
+    }
 }
 
 function planRowHtml(p) {

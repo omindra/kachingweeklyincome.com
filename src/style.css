@@ -123,6 +123,23 @@ a { color: var(--brand); }
 .ke-table tr:hover td { background: var(--bg3); }
 .ke-table .ticker { font-weight: 700; }
 .ke-table .dim { color: var(--muted); }
+
+/* Pin the "Plans" action column to the right edge of the scroll area —
+   with 13 columns the table is wider than most viewports, and without
+   this the last column just scrolls out of view with no visible cue. */
+.ke-table th:last-child, .ke-table td:last-child {
+    position: sticky; right: 0;
+    box-shadow: -1px 0 0 var(--border);
+}
+.ke-table th:last-child { background: var(--bg3); }
+.ke-table td:last-child { background: var(--bg2); }
+.ke-table tr:hover td:last-child { background: var(--bg3); }
+
+.ke-plans-link {
+    font-size: 10px; font-weight: 600; text-decoration: none;
+    white-space: nowrap;
+}
+.ke-plans-link:hover { text-decoration: underline; }
 .ke-score { display: inline-block; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
 .ke-score.hi  { background: rgba(34,197,94,.15);  color: #22c55e; }
 .ke-score.mid { background: rgba(234,179,8,.15);  color: #facc15; }
@@ -228,6 +245,12 @@ a { color: var(--brand); }
 .uni-no-screener { font-style: italic; color: var(--muted); font-size: 10px; }
 
 /* ── Diagonal plans table ────────────────────────────────────────── */
+.plans-filter-banner {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; margin-bottom: 10px;
+}
+.plans-filter-banner strong { color: var(--white); }
 .plans-table-wrap {
     background: var(--bg2); border: 1px solid var(--border);
     border-radius: 8px; overflow: hidden; max-width: 100%;
