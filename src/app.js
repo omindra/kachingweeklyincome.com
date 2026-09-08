@@ -20,8 +20,8 @@
 // Swap back to the real filenames (kaching-scanner.json / kaching-plans.json,
 // no ".sample") before actually deploying this site.
 const DATA = {
-    scanner: './data/kaching-scanner.sample.json',
-    plans:   './data/kaching-plans.sample.json'
+    scanner: './data/kaching-scanner.json',
+    plans:   './data/kaching-plans.json'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
