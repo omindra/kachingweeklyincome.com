@@ -1,0 +1,47 @@
+# Generic Java
+*.class
+
+# Generated files
+bin/
+build/
+target/
+out/
+clode/
+
+# IDE-specific files
+.idea/
+.metadata
+.gradle
+.settings/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+logs/
+*.log
+*.tmp
+temp/
+
+# Spring Boot specific files
+.sts4-cache/
+.springBeans
+
+# Environment variables and secrets
+.env
+# It is recommended to use environment variables for secrets rather than committing local properties files.
+# If you must ignore a specific local properties file:
+# application-local.properties
+# application.yml.local
+
+# Maven-specific
+dependency-reduced-pom.xml
+# Eclipse-specific
+.project
+.classpath
+.factorypath
