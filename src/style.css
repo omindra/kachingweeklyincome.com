@@ -17,6 +17,8 @@
     --muted2:  #64748b;
     --white:   #e8eef8;
     --brand:   #60a5fa;
+    --surface: #0d1018;
+    --r:       8px;
     --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
 }
 
@@ -251,37 +253,6 @@ a { color: var(--brand); }
     padding: 8px 12px; margin-bottom: 10px;
 }
 .plans-filter-banner strong { color: var(--white); }
-.plans-table-wrap {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden; max-width: 100%;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-}
-.plans-table { width: 100%; min-width: 720px; border-collapse: collapse; font-family: var(--font-mono); }
-.plans-table th {
-    text-align: left; padding: 9px 10px; background: var(--bg3);
-    font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-.plans-table td {
-    padding: 8px 10px; font-size: 11px; color: var(--text);
-    border-bottom: 1px solid var(--border); vertical-align: middle;
-}
-.plans-table tr:last-child td { border-bottom: none; }
-.plans-table tr:hover td { background: var(--bg3); }
-.plans-table .plan-ticker { font-weight: 700; color: var(--white); }
-.plans-table .leg { font-size: 10px; line-height: 1.5; }
-.plans-table .leg .label { display: inline-block; min-width: 30px; color: var(--muted); }
-.plans-table .num.profit { color: #22c55e; }
-.plans-table .num.loss   { color: #ef4444; }
-.plans-table .num.muted  { color: var(--muted); }
-.plans-table .score-pill {
-    font-size: 10px; padding: 2px 7px; border-radius: 4px;
-    background: rgba(148,163,184,.12); color: var(--muted); display: inline-block;
-    cursor: help; border-bottom: 1px dashed currentColor;
-}
-.plans-table .score-pill.high { background: rgba(34,197,94,.15);  color: #22c55e; }
-.plans-table .score-pill.mid  { background: rgba(234,179,8,.15);  color: #facc15; }
-.plans-table .score-pill.low  { background: rgba(239,68,68,.10);  color: #f87171; }
 
 /* ── Help page glossary ──────────────────────────────────────────── */
 .help-section { margin-bottom: 28px; }

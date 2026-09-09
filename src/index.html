@@ -37,26 +37,32 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" data-tab="scanner">🔎 Scanner</button>
-        <button class="tab-btn" data-tab="plans">📐 Active Plans</button>
+        <button class="tab-btn active" data-tab="plans">📊 Options</button>
+        <button class="tab-btn" data-tab="scanner">🔎 Scanner</button>
+        <button class="tab-btn" data-tab="tickers">📡 Tickers</button>
+    </div>
+
+    <!-- ── Options tab ──────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="pane-plans">
+        <div class="meta-line" id="plans-meta">Loading…</div>
+
+        <div id="plans-title" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px"></div>
+        <div id="plans-results"></div>
     </div>
 
     <!-- ── Scanner tab ─────────────────────────────────────────────── -->
-    <div class="tab-pane active" id="pane-scanner">
+    <div class="tab-pane" id="pane-scanner">
         <div class="meta-line" id="scanner-meta">Loading…</div>
         <div id="earnings-banner" style="display:none"></div>
         <div id="scanner-results"></div>
     </div>
 
-    <!-- ── Diagonal Plans tab ──────────────────────────────────────── -->
-    <div class="tab-pane" id="pane-plans">
-        <div class="meta-line" id="plans-meta">Loading…</div>
+    <!-- ── Tickers tab (Kaching Universe) ─────────────────────────────── -->
+    <div class="tab-pane" id="pane-tickers">
+        <div class="meta-line" id="tickers-meta">Loading…</div>
 
         <div id="universe-title" class="page-desc" style="margin-bottom:8px;font-weight:600"></div>
         <div class="universe-grid" id="universe-badges"></div>
-
-        <div id="plans-title" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px"></div>
-        <div id="plans-results"></div>
     </div>
 
 </div>

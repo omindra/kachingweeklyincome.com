@@ -29,13 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadScanner();
     loadPlans();
 
-    // Scanner "Plans →" links jump to the Plans tab filtered to that ticker.
+    // Scanner "Options →" links jump to the Options tab filtered to that ticker.
     document.getElementById('scanner-results').addEventListener('click', (e) => {
         const link = e.target.closest('.ke-plans-link');
         if (!link) return;
         e.preventDefault();
         showPlansForTicker(link.dataset.ticker);
     });
+
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────
@@ -145,7 +146,7 @@ function scannerRowHtml(c) {
         '<td>' + c.liquidityScore.toFixed(1) + '/5</td>' +
         '<td>' + earningsCell(c) + '</td>' +
         '<td><a href="#" class="ke-plans-link" data-ticker="' + escapeHtml(c.ticker) +
-            '" title="Show active plans for ' + escapeHtml(c.ticker) + '">Plans →</a></td>' +
+            '" title="Show active options plays for ' + escapeHtml(c.ticker) + '">Options →</a></td>' +
         '</tr>';
 }
 
@@ -218,7 +219,11 @@ let allPlans = [];
 let plansFilterTicker = null;
 
 async function loadPlans() {
+    // Options and Tickers tabs are both driven by this one fetch (plans.json
+    // carries diagonalPlans + universeBadges together) — just rendered into
+    // two separate tab panes now.
     const meta = document.getElementById('plans-meta');
+    const tickersMeta = document.getElementById('tickers-meta');
     try {
         const res = await fetch(DATA.plans, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -228,17 +233,20 @@ async function loadPlans() {
         allPlans = data.diagonalPlans || [];
         renderUniverseBadges(badges, data.universeCount);
         renderPlansTable(allPlans);
-        meta.textContent = body.exportedAt
+        const asOf = body.exportedAt
             ? 'Data as of ' + new Date(body.exportedAt).toLocaleString()
             : '';
+        meta.textContent = asOf;
+        tickersMeta.textContent = asOf;
     } catch (e) {
         meta.textContent = '⚠ Could not load plans data: ' + e.message;
+        tickersMeta.textContent = '⚠ Could not load ticker data: ' + e.message;
         document.getElementById('plans-results').innerHTML =
             '<div class="ke-empty">Data isn\'t available yet — check back soon.</div>';
     }
 }
 
-/** Jump to the Plans tab, filtered down to a single ticker's active plans. */
+/** Jump to the Options tab, filtered down to a single ticker's active plans. */
 function showPlansForTicker(ticker) {
     plansFilterTicker = ticker;
     switchTab('plans');
@@ -331,8 +339,8 @@ function renderPlansTable(allPlansForTab) {
         : '';
 
     title.textContent = plansFilterTicker
-        ? '📐 Active Diagonal Weekly Plans — ' + plans.length + ' matching ' + plansFilterTicker
-        : '📐 Active Diagonal Weekly Plans — ' + plans.length + ' candidates';
+        ? '📊 Active Options Plays — ' + plans.length + ' matching ' + plansFilterTicker
+        : '📊 Active Options Plays — ' + plans.length + ' candidates';
 
     if (!plans.length) {
         wrap.innerHTML = filterHtml + '<div class="ke-empty">' +
@@ -340,14 +348,13 @@ function renderPlansTable(allPlansForTab) {
                                 : 'No active plans right now — check back soon.') +
             '</div>';
     } else {
-        wrap.innerHTML = filterHtml +
-            '<div class="plans-table-wrap"><table class="plans-table"><thead><tr>' +
-            '<th>Ticker</th><th>Score</th><th>Long Put (insurance)</th><th>Short Put (income)</th>' +
-            '<th style="text-align:right">Net Debit</th><th style="text-align:right">Max P/L</th>' +
-            '<th style="text-align:right">B/E</th><th style="text-align:right">R:R</th><th>Generated</th>' +
-            '</tr></thead><tbody>' +
-            plans.map(planRowHtml).join('') +
-            '</tbody></table></div>';
+        // Group by ticker, same as the source Options Plays page — a
+        // ticker can have more than one active plan at once.
+        const byTicker = {};
+        for (const p of plans) (byTicker[p.ticker] = byTicker[p.ticker] || []).push(p);
+        let html = '';
+        for (const ticker of Object.keys(byTicker)) html += renderTickerCard(ticker, byTicker[ticker]);
+        wrap.innerHTML = filterHtml + html;
     }
 
     if (plansFilterTicker) {
@@ -356,78 +363,161 @@ function renderPlansTable(allPlansForTab) {
     }
 }
 
-function planRowHtml(p) {
-    let scoreHtml = '—';
-    if (p.strategyScore != null) {
-        const cls = p.strategyScore >= 80 ? 'high' : (p.strategyScore >= 60 ? 'mid' : 'low');
-        scoreHtml = '<span class="score-pill ' + cls + '" title="' + escapeHtml(p.reasoning || '') + '">' +
-            Math.round(p.strategyScore) + '</span>';
-    }
+// ── Ticker/plan cards ────────────────────────────────────────────────
+// Ported from prealerts' options.html (renderTickerCard/renderPlanCard) so
+// the Options tab has the exact same look and feel as the real Options
+// Plays page: full legs, net debit/credit, max profit/loss, break-even,
+// ROR, IV rank, net Greeks, and the "Why" reasoning line. Read-only here:
+// no "Track in KaChing" button (that's an admin-only write action).
 
-    const longLeg = legHtml('BUY', p.leg1Strike, p.leg1Expiration, p.leg1Premium, p.leg1Delta);
-    const shortLeg = legHtml('SELL', p.leg2Strike, p.leg2Expiration, p.leg2Premium, p.leg2Delta);
+const STRATEGY_NAMES = {
+    WEEKLY_INCOME_DIAGONAL: 'Weekly Income Diagonal (KaChing)',
+    DIAGONAL: 'Diagonal (PMCC)',
+    CASH_SECURED_PUT: 'Cash-Secured Put',
+    COVERED_CALL: 'Covered Call'
+};
 
-    const netDebit = p.netDebitCredit != null ? '$' + p.netDebitCredit.toFixed(2) : '—';
-    let maxPL = '';
-    if (p.maxProfit != null) maxPL += '<div class="num profit">+$' + Math.round(p.maxProfit) + '</div>';
-    if (p.maxLoss != null)   maxPL += '<div class="num loss">-$' + Math.round(p.maxLoss) + '</div>';
-    const breakEven = p.breakEven != null ? '$' + p.breakEven.toFixed(2) : '—';
-
-    let rr = '—', rrCls = 'muted';
-    if (p.maxLoss != null && p.maxLoss > 0 && p.maxProfit != null) {
-        const ratio = p.maxProfit / p.maxLoss;
-        rr = ratio.toFixed(1) + 'x';
-        rrCls = ratio >= 3 ? 'profit' : (ratio >= 2 ? '' : 'muted');
-    }
-
-    const generated = p.createdAt ? fmtDateShort(p.createdAt) : '—';
-
-    return '<tr>' +
-        '<td class="plan-ticker">' + escapeHtml(p.ticker) + '</td>' +
-        '<td>' + scoreHtml + '</td>' +
-        '<td class="leg">' + longLeg + '</td>' +
-        '<td class="leg">' + shortLeg + '</td>' +
-        '<td style="text-align:right" class="num">' + netDebit + '</td>' +
-        '<td style="text-align:right">' + maxPL + '</td>' +
-        '<td style="text-align:right" class="num muted">' + breakEven + '</td>' +
-        '<td style="text-align:right" class="num ' + rrCls + '">' + rr + '</td>' +
-        '<td class="num muted">' + generated + '</td>' +
-        '</tr>';
+/** Format YYYYMMDD → "2027-Jan-15" (matches options.html's fmtExp) */
+function fmtExp(exp) {
+    if (!exp || exp.length < 8) return exp || '';
+    const y = exp.substring(0, 4);
+    const m = parseInt(exp.substring(4, 6), 10);
+    const d = exp.substring(6, 8);
+    return `${y}-${EXP_MONTHS[m - 1] || m}-${d}`;
 }
 
-function legHtml(action, strike, expiration, premium, delta) {
-    if (strike == null) return '';
-    let html = '<div><span class="label">' + action + '</span> $' + Math.round(strike) +
-        ' <span class="num muted">· ' + fmtExpiration(expiration) + '</span>';
-    if (premium != null) html += ' <span class="num muted">· $' + premium.toFixed(2) + '</span>';
-    html += '</div>';
-    if (delta != null) {
-        html += '<div class="num muted" style="font-size:9px;padding-left:34px">Δ ' + delta.toFixed(2) + '</div>';
+function renderTickerCard(ticker, plans) {
+    const first = plans[0];
+    const dirColor = first.direction === 'BUY'   ? '#34d399'
+        : first.direction === 'SHORT' ? '#f87171'
+            : '#94a3b8';
+    const price = first.underlyingPrice ? '$' + first.underlyingPrice.toFixed(2) : '—';
+
+    let body = '';
+    plans.forEach((p, i) => { body += renderPlanCard(p, i + 1); });
+
+    return `<div style="background:var(--surface);border:1px solid var(--border);
+                        border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    gap:24px;margin-bottom:14px;padding-bottom:12px;
+                    border-bottom:1px solid var(--border)">
+            <div>
+                <span style="font-size:20px;font-weight:900;color:var(--text);
+                             font-family:var(--font-mono);letter-spacing:1px">${escapeHtml(ticker)}</span>
+                ${first.direction ? `<span style="font-size:11px;color:${dirColor};font-weight:700;
+                             margin-left:12px;font-family:var(--font-mono);
+                             padding:2px 8px;background:${dirColor}22;
+                             border-radius:var(--r)">${escapeHtml(first.direction)}</span>` : ''}
+                ${first.equityScore != null ? `<span style="font-size:10px;color:var(--muted);
+                             margin-left:8px;font-family:var(--font-mono)">
+                    Score ${first.equityScore}/15</span>` : ''}
+            </div>
+            <div style="font-size:18px;font-weight:700;color:var(--text);
+                        font-family:var(--font-mono)">${price}</div>
+        </div>
+        ${body}
+    </div>`;
+}
+
+function renderPlanCard(p, rank) {
+    const score = p.strategyScore || 0;
+    const scoreColor = score >= 80 ? '#34d399'
+        : score >= 70 ? '#fbbf24'
+            : '#94a3b8';
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    const theorBadge = p.priceSource === 'THEORETICAL'
+        ? ' <span style="font-family:var(--font-mono);font-size:9px;' +
+          'padding:2px 6px;background:rgba(139,92,246,.15);color:#a78bfa;' +
+          'border-radius:8px;border:1px solid rgba(139,92,246,.3)"' +
+          ' title="Black-Scholes theoretical pricing — no live quote available">' +
+          '⚗️ BS</span>'
+        : '';
+
+    let legs = '';
+    for (let i = 1; i <= 4; i++) {
+        const action  = p['leg' + i + 'Action'];
+        const right   = p['leg' + i + 'Right'];
+        const strike  = p['leg' + i + 'Strike'];
+        const exp     = p['leg' + i + 'Expiration'];
+        const premium = p['leg' + i + 'Premium'];
+        if (!action) continue;
+        const arrow  = action === 'BUY' ? '▲' : '▼';
+        const aColor = action === 'BUY' ? '#34d399' : '#f87171';
+        legs += `<div>
+            <span style="color:${aColor};font-weight:700">${arrow} ${action}</span>
+            ${right || ''}
+            <span style="color:var(--text);font-weight:700">$${strike != null ? strike.toFixed(0) : '?'}</span>
+            <span style="color:var(--muted)">${fmtExp(exp)}
+            ${premium != null ? ' @ $' + premium.toFixed(2) : ''}</span>
+        </div>`;
     }
-    return html;
+
+    const metrics = [];
+    if (p.netDebitCredit != null) {
+        const dcLabel = p.netDebitCredit >= 0 ? 'Net debit' : 'Net credit';
+        const dcColor = p.netDebitCredit >= 0 ? '#f87171' : '#34d399';
+        metrics.push(detailMetric(dcLabel, '$' + Math.abs(p.netDebitCredit).toFixed(2), dcColor));
+    }
+    if (p.maxProfit != null) metrics.push(detailMetric('Max profit', '$' + p.maxProfit.toFixed(0), '#34d399'));
+    if (p.maxLoss != null)   metrics.push(detailMetric('Max loss', '$' + p.maxLoss.toFixed(0), '#f87171'));
+    if (p.breakEven != null) metrics.push(detailMetric('Break-even', '$' + p.breakEven.toFixed(2), '#94a3b8'));
+    if (p.breakEvenLow != null && p.breakEvenHigh != null) {
+        metrics.push(detailMetric('BE range',
+            '$' + p.breakEvenLow.toFixed(0) + '-$' + p.breakEvenHigh.toFixed(0), '#94a3b8'));
+    }
+    if (p.returnOnRisk != null) metrics.push(detailMetric('ROR', p.returnOnRisk.toFixed(0) + '%', '#60a5fa'));
+    if (p.ivRank != null) {
+        const ivColor = p.ivRank >= 60 ? '#f87171' : p.ivRank <= 30 ? '#34d399' : '#fbbf24';
+        metrics.push(detailMetric('IV rank', p.ivRank.toFixed(0) + ' (' + (p.ivRegime || '?') + ')', ivColor));
+    }
+    if (p.netDelta != null) metrics.push(detailMetric('Net Δ', p.netDelta.toFixed(3), '#60a5fa'));
+    if (p.netTheta != null) metrics.push(detailMetric('Net Θ', p.netTheta.toFixed(2), '#a78bfa'));
+
+    return `<div style="background:var(--bg);border-radius:var(--r);
+                        border-left:3px solid ${scoreColor};
+                        padding:14px 16px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    gap:16px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--text);
+                        font-family:var(--font-mono)">
+                ${medal} ${STRATEGY_NAMES[p.strategy] || p.strategy || 'Weekly Income Diagonal (KaChing)'}
+                <span style="color:var(--muted);font-weight:400;font-size:10px;
+                             margin-left:6px">
+                    ${p.expirationWindow || ''} · ${p.daysToExpire != null ? p.daysToExpire : '?'}d
+                </span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:14px;
+                        font-weight:700;color:${scoreColor}">
+                ${score.toFixed(1)}/100${theorBadge}
+            </div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text);
+                    line-height:1.7;margin-bottom:10px">${legs}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+                    gap:12px;font-family:var(--font-mono);font-size:11px;
+                    padding:10px 0;border-top:1px solid var(--border);
+                    border-bottom:1px solid var(--border);margin-bottom:10px">
+            ${metrics.join('')}
+        </div>
+        ${p.reasoning ? `<div style="font-size:11px;color:var(--muted);
+                                      line-height:1.6;padding:4px 0">
+            <span style="color:#60a5fa;font-weight:700">Why: </span>
+            ${escapeHtml(p.reasoning)}
+        </div>` : ''}
+    </div>`;
+}
+
+function detailMetric(label, value, color) {
+    return `<div>
+        <div style="color:var(--muted);font-size:9px;text-transform:uppercase;
+                    letter-spacing:1px;margin-bottom:2px">${label}</div>
+        <div style="color:${color};font-weight:700;font-size:12px">${value}</div>
+    </div>`;
 }
 
 // ── Shared formatting helpers ──────────────────────────────────────────
 
 const EXP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-/** "20270115" -> "2027 Jan 15" (matches DateTimeUtils.formatOptionsExpiration) */
-function fmtExpiration(yyyymmdd) {
-    if (!yyyymmdd || yyyymmdd.length < 8) return yyyymmdd || '—';
-    const y = yyyymmdd.substring(0, 4);
-    const m = parseInt(yyyymmdd.substring(4, 6), 10) - 1;
-    const d = yyyymmdd.substring(6, 8);
-    return y + ' ' + (EXP_MONTHS[m] || m) + ' ' + d;
-}
-
-function fmtDateShort(iso) {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
-    return (d.getMonth() + 1).toString().padStart(2, '0') + '/' +
-        d.getDate().toString().padStart(2, '0') + ' ' +
-        d.getHours().toString().padStart(2, '0') + ':' +
-        d.getMinutes().toString().padStart(2, '0');
-}
 
 function fmtPrice(d) {
     if (d === null || d === undefined) return '—';
