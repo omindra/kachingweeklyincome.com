@@ -65,7 +65,10 @@
         <div class="universe-grid" id="universe-badges"></div>
     </div>
 
-    <div class="disclaimer-box">
+    <!-- Hidden until the initial data load settles — otherwise it flashes
+         up near the top of the page while the tabs still just say "Loading…",
+         then jumps down once the real content renders. -->
+    <div class="disclaimer-box" id="disclaimer-box" hidden>
         <span class="help-icon">⚠️</span>
         Everything on this site is for informational and educational
         purposes only. It is not financial advice, and nothing here is a

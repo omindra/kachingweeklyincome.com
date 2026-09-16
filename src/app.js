@@ -25,8 +25,15 @@ const DATA = {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
-    loadScanner();
-    loadPlans();
+
+    // Reveal the disclaimer only once the initial load has settled (success
+    // or failure either way) — showing it immediately looks bad, since it'd
+    // sit right under a bare "Loading…" line and then jump down once the
+    // real content renders in.
+    Promise.allSettled([loadScanner(), loadPlans()]).then(() => {
+        const disclaimer = document.getElementById('disclaimer-box');
+        if (disclaimer) disclaimer.hidden = false;
+    });
 
     // Scanner "Options →" links jump to the Options tab filtered to that ticker.
     document.getElementById('scanner-results').addEventListener('click', (e) => {
