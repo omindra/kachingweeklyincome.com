@@ -15,13 +15,12 @@
  *     project plan).
  */
 
-// ⚠️ TEMPORARY — pointed at the local .sample.json fixtures for
-// pre-deployment visual preview (no real S3 bucket/export exists yet).
-// Swap back to the real filenames (kaching-scanner.json / kaching-plans.json,
-// no ".sample") before actually deploying this site.
+// Site is served from GitHub Pages; the data itself is exported on a
+// schedule straight to S3 by KachingExportService (prealerts app), so it's
+// fetched cross-origin from the bucket rather than bundled with the site.
 const DATA = {
-    scanner: './data/kaching-scanner.json',
-    plans:   './data/kaching-plans.json'
+    scanner: 'https://kachingweeklyincome-site.s3.us-east-1.amazonaws.com/data/kaching-scanner.json',
+    plans:   'https://kachingweeklyincome-site.s3.us-east-1.amazonaws.com/data/kaching-plans.json'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -408,9 +407,11 @@ function renderTickerCard(ticker, plans) {
                              margin-left:12px;font-family:var(--font-mono);
                              padding:2px 8px;background:${dirColor}22;
                              border-radius:var(--r)">${escapeHtml(first.direction)}</span>` : ''}
-                ${first.equityScore != null ? `<span style="font-size:10px;color:var(--muted);
-                             margin-left:8px;font-family:var(--font-mono)">
-                    Score ${first.equityScore}/15</span>` : ''}
+                ${first.equityScore != null ? `<span title="This ticker's screening score, out of 15 — separate from the strategy score (/100) on each plan below."
+                             style="font-size:10px;color:var(--muted);
+                             margin-left:8px;font-family:var(--font-mono);
+                             border-bottom:1px dotted var(--muted);cursor:help">
+                    Ticker Score ${first.equityScore}/15</span>` : ''}
             </div>
             <div style="font-size:18px;font-weight:700;color:var(--text);
                         font-family:var(--font-mono)">${price}</div>
@@ -419,19 +420,27 @@ function renderTickerCard(ticker, plans) {
     </div>`;
 }
 
+/** Plain-language label + explanation for the long (insurance) leg's
+ *  expiration bucket — the raw enum (EXTENDED/STANDARD/NEAR/...) means
+ *  nothing to a site visitor on its own. */
+function expirationWindowInfo(w) {
+    if (!w) return null;
+    const label = w.charAt(0) + w.slice(1).toLowerCase();
+    const tooltips = {
+        EXTENDED: 'The long (insurance) leg is dated further out than usual, so it needs replacing less often.',
+        STANDARD: 'The long (insurance) leg uses this strategy\'s typical expiration window.',
+        NEAR: 'The long (insurance) leg is dated closer than usual, so it will need replacing sooner.'
+    };
+    return { label, tooltip: tooltips[w] || 'How far out this plan\'s long (insurance) leg is dated.' };
+}
+
 function renderPlanCard(p, rank) {
     const score = p.strategyScore || 0;
     const scoreColor = score >= 80 ? '#34d399'
         : score >= 70 ? '#fbbf24'
             : '#94a3b8';
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-    const theorBadge = p.priceSource === 'THEORETICAL'
-        ? ' <span style="font-family:var(--font-mono);font-size:9px;' +
-          'padding:2px 6px;background:rgba(139,92,246,.15);color:#a78bfa;' +
-          'border-radius:8px;border:1px solid rgba(139,92,246,.3)"' +
-          ' title="Black-Scholes theoretical pricing — no live quote available">' +
-          '⚗️ BS</span>'
-        : '';
+    const windowInfo = expirationWindowInfo(p.expirationWindow);
 
     let legs = '';
     for (let i = 1; i <= 4; i++) {
@@ -483,12 +492,15 @@ function renderPlanCard(p, rank) {
                 ${medal} ${STRATEGY_NAMES[p.strategy] || p.strategy || 'Weekly Income Diagonal (KaChing)'}
                 <span style="color:var(--muted);font-weight:400;font-size:10px;
                              margin-left:6px">
-                    ${p.expirationWindow || ''} · ${p.daysToExpire != null ? p.daysToExpire : '?'}d
+                    ${windowInfo ? `<span title="${escapeHtml(windowInfo.tooltip)}"
+                        style="border-bottom:1px dotted var(--muted);cursor:help">${escapeHtml(windowInfo.label)}</span> · ` : ''}${p.daysToExpire != null ? p.daysToExpire : '?'}d
                 </span>
             </div>
             <div style="font-family:var(--font-mono);font-size:14px;
                         font-weight:700;color:${scoreColor}">
-                ${score.toFixed(1)}/100${theorBadge}
+                <span style="color:var(--muted);font-weight:400;font-size:9px;
+                             text-transform:uppercase;letter-spacing:0.05em;
+                             margin-right:5px">Strategy Score</span>${score.toFixed(1)}/100
             </div>
         </div>
         <div style="font-family:var(--font-mono);font-size:11px;color:var(--text);
@@ -499,11 +511,32 @@ function renderPlanCard(p, rank) {
                     border-bottom:1px solid var(--border);margin-bottom:10px">
             ${metrics.join('')}
         </div>
-        ${p.reasoning ? `<div style="font-size:11px;color:var(--muted);
-                                      line-height:1.6;padding:4px 0">
-            <span style="color:#60a5fa;font-weight:700">Why: </span>
-            ${escapeHtml(p.reasoning)}
-        </div>` : ''}
+        ${p.reasoning ? renderWhyBox(p.reasoning) : ''}
+    </div>`;
+}
+
+/** The "why" reasoning is the one place a visitor can see the actual case
+ *  for a plan, so it gets its own callout instead of a muted throwaway
+ *  line — narrative up top, the trailing technical setup readout (SMA/RSI
+ *  etc., appended after " | Setup: ") broken out as scannable chips. */
+function renderWhyBox(reasoning) {
+    const sepIdx = reasoning.indexOf(' | Setup: ');
+    const main = sepIdx === -1 ? reasoning : reasoning.slice(0, sepIdx);
+    const setup = sepIdx === -1 ? '' : reasoning.slice(sepIdx + ' | Setup: '.length);
+    const setupChips = setup
+        ? setup.split(' · ').map(s => `<span style="display:inline-block;
+              background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+              padding:2px 8px;margin:4px 6px 0 0;font-family:var(--font-mono);
+              font-size:10px;color:var(--muted2)">${escapeHtml(s.trim())}</span>`).join('')
+        : '';
+    return `<div style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);
+                border-radius:var(--r);padding:12px 14px;margin-top:2px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;
+                    font-size:11px;font-weight:700;color:#60a5fa">
+            <span>💡</span><span>Why this setup</span>
+        </div>
+        <div style="font-size:12px;color:var(--text);line-height:1.6">${escapeHtml(main.trim())}</div>
+        ${setupChips ? `<div style="margin-top:2px">${setupChips}</div>` : ''}
     </div>`;
 }
 

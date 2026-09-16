@@ -254,14 +254,54 @@ a { color: var(--brand); }
 }
 .plans-filter-banner strong { color: var(--white); }
 
-/* ── Help page glossary ──────────────────────────────────────────── */
-.help-section { margin-bottom: 28px; }
-.help-section h2 { color: var(--white); font-size: 18px; margin-bottom: 10px; }
-.help-section p, .help-section li { line-height: 1.7; color: var(--text); font-size: 14px; }
-.help-steps { padding-left: 20px; }
+/* ── Help page ───────────────────────────────────────────────────── */
+.help-intro { margin-bottom: 16px; }
+.help-intro-title { font-weight: 700; font-size: 20px; color: var(--white); margin-bottom: 6px; }
+.help-intro p { color: var(--muted2); font-size: 13px; line-height: 1.6; margin: 0; }
+
+.help-jumpnav {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+}
+.help-jumpnav a {
+    text-decoration: none; color: var(--muted2);
+    font-family: var(--font-mono); font-size: 11px;
+    padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg2);
+}
+.help-jumpnav a:hover { color: var(--white); background: var(--bg3); border-color: var(--border2); }
+
+.help-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--border); border-radius: 8px;
+    padding: 20px 24px; margin-bottom: 20px; scroll-margin-top: 16px;
+}
+.help-card.accent-blue  { border-left-color: var(--brand); }
+.help-card.accent-amber { border-left-color: #facc15; }
+.help-card.accent-green { border-left-color: #22c55e; }
+.help-card.accent-brand { border-left-color: #a78bfa; }
+
+.help-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.help-card-head h2 { color: var(--white); font-size: 17px; margin: 0; }
+.help-icon { font-size: 18px; line-height: 1; flex: none; }
+
+.help-card p, .help-card li { line-height: 1.7; color: var(--text); font-size: 14px; }
+.help-card p { margin: 0 0 12px; }
+.help-card p:last-child { margin-bottom: 0; }
+
+.help-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.help-list:last-child { margin-bottom: 0; }
+.help-list li {
+    position: relative; padding-left: 20px;
+}
+.help-list li::before {
+    content: '›'; position: absolute; left: 0; top: 0;
+    color: var(--brand); font-weight: 700;
+}
+
 .glossary-table {
     width: 100%; border-collapse: collapse; font-size: 13px;
-    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
 }
 .glossary-table th, .glossary-table td {
     text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border);
@@ -272,8 +312,10 @@ a { color: var(--brand); }
     text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted2);
 }
 .glossary-table tr:last-child td { border-bottom: none; }
+.glossary-table tr:hover td { background: var(--bg2); }
 .glossary-table td:first-child { font-family: var(--font-mono); font-weight: 700; color: var(--white); white-space: nowrap; }
 .disclaimer-box {
+    display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;
     background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.25);
     border-radius: 8px; padding: 14px 16px; font-size: 12px; color: var(--muted2); line-height: 1.7;
 }
