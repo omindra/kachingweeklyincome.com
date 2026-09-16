@@ -65,7 +65,7 @@ function switchTab(name) {
 async function loadScanner() {
     const meta = document.getElementById('scanner-meta');
     try {
-        const res = await fetch(DATA.scanner, { cache: 'no-store' });
+        const res = await fetch(DATA.scanner);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const body = await res.json();
         const scanAt = body.data && body.data.scanAt;
@@ -231,7 +231,7 @@ async function loadPlans() {
     const meta = document.getElementById('plans-meta');
     const tickersMeta = document.getElementById('tickers-meta');
     try {
-        const res = await fetch(DATA.plans, { cache: 'no-store' });
+        const res = await fetch(DATA.plans);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const body = await res.json();
         const data = body.data || {};
