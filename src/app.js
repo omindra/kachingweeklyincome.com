@@ -410,7 +410,7 @@ function renderPlansTable(allPlansForTab) {
 // no "Track in KaChing" button (that's an admin-only write action).
 
 const STRATEGY_NAMES = {
-    WEEKLY_INCOME_DIAGONAL: 'Weekly Income Diagonal (KaChing)',
+    WEEKLY_INCOME_DIAGONAL: 'KaChing Spread',
     DIAGONAL: 'Diagonal (PMCC)',
     CASH_SECURED_PUT: 'Cash-Secured Put',
     COVERED_CALL: 'Covered Call'
@@ -525,7 +525,7 @@ function renderPlanCard(p, rank) {
                     gap:16px;margin-bottom:10px">
             <div style="font-size:13px;font-weight:700;color:var(--text);
                         font-family:var(--font-mono)">
-                ${medal} ${STRATEGY_NAMES[p.strategy] || p.strategy || 'Weekly Income Diagonal (KaChing)'}
+                ${medal} ${STRATEGY_NAMES[p.strategy] || p.strategy || 'KaChing Spread'}
                 <span style="color:var(--muted);font-weight:400;font-size:10px;
                              margin-left:6px">
                     ${windowInfo ? `<span title="${escapeHtml(windowInfo.tooltip)}"
