@@ -7,11 +7,25 @@
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  // Deny by default in the EEA + UK + Switzerland (GDPR / UK-GDPR / revFADP
+  // jurisdictions) — this list must match REGULATED_COUNTRIES in ./consent.js.
   gtag('consent', 'default', {
     'ad_storage': 'denied',
     'ad_user_data': 'denied',
     'ad_personalization': 'denied',
-    'analytics_storage': 'denied'
+    'analytics_storage': 'denied',
+    'region': ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE',
+               'IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE',
+               'IS','LI','NO','GB','CH']
+  });
+  // Everywhere else: no ads, ever — but analytics can run immediately.
+  // consent.js does its own geo-IP check and skips the banner entirely
+  // outside the region list above, since it isn't legally required there.
+  gtag('consent', 'default', {
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'analytics_storage': 'granted'
   });
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-63BKH6P4F0"></script>
