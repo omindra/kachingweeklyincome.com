@@ -43,6 +43,21 @@ document.addEventListener('DOMContentLoaded', () => {
         showPlansForTicker(link.dataset.ticker);
     });
 
+    // Ticker filter inputs — each tab filters its own already-loaded data,
+    // no refetch needed.
+    document.getElementById('scanner-ticker-filter').addEventListener('input', (e) => {
+        scannerTickerQuery = e.target.value;
+        applyScannerFilter();
+    });
+    document.getElementById('plans-ticker-filter').addEventListener('input', (e) => {
+        plansTickerQuery = e.target.value;
+        renderPlansTable(allPlans);
+    });
+    document.getElementById('tickers-ticker-filter').addEventListener('input', (e) => {
+        tickersQuery = e.target.value;
+        applyTickersFilter();
+    });
+
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────
@@ -62,6 +77,9 @@ function switchTab(name) {
 
 // ── Scanner tab ──────────────────────────────────────────────────────
 
+let scannerCandidates = [];
+let scannerTickerQuery = '';
+
 async function loadScanner() {
     const meta = document.getElementById('scanner-meta');
     try {
@@ -70,8 +88,9 @@ async function loadScanner() {
         const body = await res.json();
         const scanAt = body.data && body.data.scanAt;
         const candidates = (body.data && body.data.candidates) || [];
+        scannerCandidates = candidates;
         renderEarningsBanner(candidates);
-        renderScannerTable(candidates);
+        applyScannerFilter();
         meta.textContent = scanAt
             ? 'Scan from ' + new Date(scanAt).toLocaleString() + '  ·  ' + candidates.length + ' tickers'
             : candidates.length + ' tickers';
@@ -80,6 +99,14 @@ async function loadScanner() {
         document.getElementById('scanner-results').innerHTML =
             '<div class="ke-empty">Data isn\'t available yet — check back soon.</div>';
     }
+}
+
+/** Re-filters the already-fetched scanner candidates by scannerTickerQuery
+ *  and re-renders — no refetch, this is a pure client-side view filter. */
+function applyScannerFilter() {
+    const q = scannerTickerQuery.trim().toUpperCase();
+    const filtered = q ? scannerCandidates.filter(c => c.ticker.toUpperCase().includes(q)) : scannerCandidates;
+    renderScannerTable(filtered, q);
 }
 
 const EARNINGS_BANNER_DAYS = 5;
@@ -101,10 +128,12 @@ function renderEarningsBanner(candidates) {
             (c.earningsInDays === 0 ? 'today' : c.earningsInDays + 'd') + '</span>').join(' ');
 }
 
-function renderScannerTable(candidates) {
+function renderScannerTable(candidates, query) {
     const wrap = document.getElementById('scanner-results');
     if (!candidates.length) {
-        wrap.innerHTML = '<div class="ke-empty">No scan data yet — check back soon.</div>';
+        wrap.innerHTML = '<div class="ke-empty">' +
+            (query ? 'No tickers match "' + escapeHtml(query) + '".' : 'No scan data yet — check back soon.') +
+            '</div>';
         return;
     }
     const sorted = candidates.slice().sort((a, b) => b.totalScore - a.totalScore);
@@ -222,7 +251,7 @@ function signalClass(signal) {
 // ── Plans tab (universe badges + Active Diagonal Weekly Plans) ────────
 
 let allPlans = [];
-let plansFilterTicker = null;
+let plansTickerQuery = '';
 
 async function loadPlans() {
     // Options and Tickers tabs are both driven by this one fetch (plans.json
@@ -235,9 +264,10 @@ async function loadPlans() {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const body = await res.json();
         const data = body.data || {};
-        const badges = data.universeBadges || [];
+        allBadges = data.universeBadges || [];
+        universeCountTotal = data.universeCount;
         allPlans = data.diagonalPlans || [];
-        renderUniverseBadges(badges, data.universeCount);
+        applyTickersFilter();
         renderPlansTable(allPlans);
         const asOf = body.exportedAt
             ? 'Data as of ' + new Date(body.exportedAt).toLocaleString()
@@ -254,22 +284,36 @@ async function loadPlans() {
 
 /** Jump to the Options tab, filtered down to a single ticker's active plans. */
 function showPlansForTicker(ticker) {
-    plansFilterTicker = ticker;
+    plansTickerQuery = ticker;
+    const input = document.getElementById('plans-ticker-filter');
+    if (input) input.value = ticker;
     switchTab('plans');
     renderPlansTable(allPlans);
 }
 
-function clearPlansFilter() {
-    plansFilterTicker = null;
-    renderPlansTable(allPlans);
+let allBadges = [];
+let universeCountTotal = null;
+let tickersQuery = '';
+
+/** Re-filters the already-fetched universe badges by tickersQuery and
+ *  re-renders — no refetch, this is a pure client-side view filter. */
+function applyTickersFilter() {
+    const q = tickersQuery.trim().toUpperCase();
+    const filtered = q ? allBadges.filter(b => b.ticker.toUpperCase().includes(q)) : allBadges;
+    renderUniverseBadges(filtered, q);
 }
 
-function renderUniverseBadges(badges, universeCount) {
+function renderUniverseBadges(badges, query) {
     const wrap = document.getElementById('universe-badges');
     const title = document.getElementById('universe-title');
-    if (!badges.length) { wrap.innerHTML = ''; title.textContent = ''; return; }
-    title.textContent = '📡 Kaching Universe — ' + (universeCount != null ? universeCount : badges.length) + ' tickers';
-    wrap.innerHTML = badges.map(badgeHtml).join('');
+    if (!allBadges.length) { wrap.innerHTML = ''; title.textContent = ''; return; }
+    const total = universeCountTotal != null ? universeCountTotal : allBadges.length;
+    title.textContent = query
+        ? '📡 Kaching Universe — ' + badges.length + ' of ' + total + ' tickers match "' + escapeHtml(query) + '"'
+        : '📡 Kaching Universe — ' + total + ' tickers';
+    wrap.innerHTML = badges.length
+        ? badges.map(badgeHtml).join('')
+        : '<div class="ke-empty">No tickers match "' + escapeHtml(query) + '".</div>';
 }
 
 function badgeHtml(b) {
@@ -334,39 +378,28 @@ function renderPlansTable(allPlansForTab) {
     const wrap = document.getElementById('plans-results');
     const title = document.getElementById('plans-title');
 
-    const plans = plansFilterTicker
-        ? allPlansForTab.filter(p => p.ticker === plansFilterTicker)
-        : allPlansForTab;
+    const q = plansTickerQuery.trim().toUpperCase();
+    const plans = q ? allPlansForTab.filter(p => p.ticker.toUpperCase().includes(q)) : allPlansForTab;
 
-    const filterHtml = plansFilterTicker
-        ? '<div class="plans-filter-banner">Showing active plans for <strong>' +
-            escapeHtml(plansFilterTicker) + '</strong> only — ' +
-            '<a href="#" id="plans-filter-clear">clear filter</a></div>'
-        : '';
-
-    title.textContent = plansFilterTicker
-        ? '📊 Active Options Plays — ' + plans.length + ' matching ' + plansFilterTicker
+    title.textContent = q
+        ? '📊 Active Options Plays — ' + plans.length + ' matching "' + plansTickerQuery.trim() + '"'
         : '📊 Active Options Plays — ' + plans.length + ' candidates';
 
     if (!plans.length) {
-        wrap.innerHTML = filterHtml + '<div class="ke-empty">' +
-            (plansFilterTicker ? 'No active plans for ' + escapeHtml(plansFilterTicker) + ' right now.'
-                                : 'No active plans right now — check back soon.') +
+        wrap.innerHTML = '<div class="ke-empty">' +
+            (q ? 'No active plans match "' + escapeHtml(plansTickerQuery.trim()) + '".'
+               : 'No active plans right now — check back soon.') +
             '</div>';
-    } else {
-        // Group by ticker, same as the source Options Plays page — a
-        // ticker can have more than one active plan at once.
-        const byTicker = {};
-        for (const p of plans) (byTicker[p.ticker] = byTicker[p.ticker] || []).push(p);
-        let html = '';
-        for (const ticker of Object.keys(byTicker)) html += renderTickerCard(ticker, byTicker[ticker]);
-        wrap.innerHTML = filterHtml + html;
+        return;
     }
 
-    if (plansFilterTicker) {
-        const clear = document.getElementById('plans-filter-clear');
-        if (clear) clear.addEventListener('click', (e) => { e.preventDefault(); clearPlansFilter(); });
-    }
+    // Group by ticker, same as the source Options Plays page — a
+    // ticker can have more than one active plan at once.
+    const byTicker = {};
+    for (const p of plans) (byTicker[p.ticker] = byTicker[p.ticker] || []).push(p);
+    let html = '';
+    for (const ticker of Object.keys(byTicker)) html += renderTickerCard(ticker, byTicker[ticker]);
+    wrap.innerHTML = html;
 }
 
 // ── Ticker/plan cards ────────────────────────────────────────────────
@@ -414,11 +447,6 @@ function renderTickerCard(ticker, plans) {
                              margin-left:12px;font-family:var(--font-mono);
                              padding:2px 8px;background:${dirColor}22;
                              border-radius:var(--r)">${escapeHtml(first.direction)}</span>` : ''}
-                ${first.equityScore != null ? `<span title="This ticker's screening score, out of 15 — separate from the strategy score (/100) on each plan below."
-                             style="font-size:10px;color:var(--muted);
-                             margin-left:8px;font-family:var(--font-mono);
-                             border-bottom:1px dotted var(--muted);cursor:help">
-                    Ticker Score ${first.equityScore}/15</span>` : ''}
             </div>
             <div style="font-size:18px;font-weight:700;color:var(--text);
                         font-family:var(--font-mono)">${price}</div>
@@ -459,9 +487,10 @@ function renderPlanCard(p, rank) {
         if (!action) continue;
         const arrow  = action === 'BUY' ? '▲' : '▼';
         const aColor = action === 'BUY' ? '#34d399' : '#f87171';
+        const rightFull = right === 'P' ? 'PUT' : right === 'C' ? 'CALL' : (right || '');
         legs += `<div>
             <span style="color:${aColor};font-weight:700">${arrow} ${action}</span>
-            ${right || ''}
+            ${rightFull}
             <span style="color:var(--text);font-weight:700">$${strike != null ? strike.toFixed(0) : '?'}</span>
             <span style="color:var(--muted)">${fmtExp(exp)}
             ${premium != null ? ' @ $' + premium.toFixed(2) : ''}</span>
@@ -504,7 +533,7 @@ function renderPlanCard(p, rank) {
                 </span>
             </div>
             <div style="font-family:var(--font-mono);font-size:14px;
-                        font-weight:700;color:${scoreColor}">
+                        font-weight:700;color:${scoreColor}" title="Trade quality score for this specific plan, out of 100.">
                 <span style="color:var(--muted);font-weight:400;font-size:9px;
                              text-transform:uppercase;letter-spacing:0.05em;
                              margin-right:5px">Strategy Score</span>${score.toFixed(1)}/100
