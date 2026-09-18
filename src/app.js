@@ -385,9 +385,9 @@ function badgeHtml(b) {
             moveHtml + scoreHtml +
             '<span class="uni-spacer"></span>' +
             suggestionHtml +
+            optionsBtnHtml +
         '</div>' +
         row2 +
-        '<div class="uni-row2" style="margin-top:6px;justify-content:flex-end">' + optionsBtnHtml + '</div>' +
         '</div>';
 }
 
