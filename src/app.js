@@ -43,6 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
         showPlansForTicker(link.dataset.ticker);
     });
 
+    // Tickers tab "📊 Options" buttons do the same thing.
+    document.getElementById('universe-badges').addEventListener('click', (e) => {
+        const btn = e.target.closest('.uni-options-btn');
+        if (!btn) return;
+        showPlansForTicker(btn.dataset.ticker);
+    });
+
     // Ticker filter inputs — each tab filters its own already-loaded data,
     // no refetch needed.
     document.getElementById('scanner-ticker-filter').addEventListener('input', (e) => {
@@ -51,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('plans-ticker-filter').addEventListener('input', (e) => {
         plansTickerQuery = e.target.value;
+        plansExactMatch = false; // manual typing always goes back to substring search
         renderPlansTable(allPlans);
     });
     document.getElementById('tickers-ticker-filter').addEventListener('input', (e) => {
@@ -252,6 +260,7 @@ function signalClass(signal) {
 
 let allPlans = [];
 let plansTickerQuery = '';
+let plansExactMatch = false;
 
 async function loadPlans() {
     // Options and Tickers tabs are both driven by this one fetch (plans.json
@@ -282,9 +291,12 @@ async function loadPlans() {
     }
 }
 
-/** Jump to the Options tab, filtered down to a single ticker's active plans. */
+/** Jump to the Options tab, filtered down to a single ticker's active plans.
+ *  Exact match — otherwise clicking "Options →" for ticker B would also
+ *  pull in CPB, ABBV, etc. via substring matching. */
 function showPlansForTicker(ticker) {
     plansTickerQuery = ticker;
+    plansExactMatch = true;
     const input = document.getElementById('plans-ticker-filter');
     if (input) input.value = ticker;
     switchTab('plans');
@@ -363,6 +375,10 @@ function badgeHtml(b) {
         row2 = '<div class="uni-row2" style="margin-top:3px"><span class="uni-no-screener">no screener data yet</span></div>';
     }
 
+    const optionsBtnHtml = '<button type="button" class="uni-options-btn" data-ticker="' +
+        escapeHtml(b.ticker) + '" title="Show active options plans for ' + escapeHtml(b.ticker) +
+        '">📊</button>';
+
     return '<div class="uni-badge ' + biasCls + '" title="' + escapeHtml(b.notes || b.ticker) + '">' +
         '<div class="uni-row1">' +
             '<span class="uni-ticker">' + escapeHtml(b.ticker) + '</span>' +
@@ -371,6 +387,7 @@ function badgeHtml(b) {
             suggestionHtml +
         '</div>' +
         row2 +
+        '<div class="uni-row2" style="margin-top:6px;justify-content:flex-end">' + optionsBtnHtml + '</div>' +
         '</div>';
 }
 
@@ -379,7 +396,9 @@ function renderPlansTable(allPlansForTab) {
     const title = document.getElementById('plans-title');
 
     const q = plansTickerQuery.trim().toUpperCase();
-    const plans = q ? allPlansForTab.filter(p => p.ticker.toUpperCase().includes(q)) : allPlansForTab;
+    const plans = !q ? allPlansForTab
+        : plansExactMatch ? allPlansForTab.filter(p => p.ticker.toUpperCase() === q)
+        : allPlansForTab.filter(p => p.ticker.toUpperCase().includes(q));
 
     title.textContent = q
         ? '📊 Active Options Plays — ' + plans.length + ' matching "' + plansTickerQuery.trim() + '"'
