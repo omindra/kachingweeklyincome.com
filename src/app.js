@@ -174,7 +174,10 @@ function signalBadge(c) {
 function scannerRowHtml(c) {
     const scoreCls = c.totalScore >= 70 ? 'hi' : (c.totalScore >= 55 ? 'mid' : 'lo');
     const badge = signalBadge(c);
-    return '<tr>' +
+    // Row edge colour (style.css tr.buy / tr.short): green for an entry, red for danger
+    const rowCls = badge.cls === 'kaching-put' ? 'buy'
+        : (badge.cls === 'falling-knife' || badge.cls === 'too-extended-warn' ? 'short' : '');
+    return '<tr' + (rowCls ? ' class="' + rowCls + '"' : '') + '>' +
         '<td class="ticker">' + escapeHtml(c.ticker) + '</td>' +
         '<td><span class="ke-score ' + scoreCls + '">' + c.totalScore.toFixed(0) + '</span></td>' +
         '<td><span class="ke-signal ' + badge.cls + '" title="' + badge.title + '">' +
@@ -454,11 +457,10 @@ function renderTickerCard(ticker, plans) {
     let body = '';
     plans.forEach((p, i) => { body += renderPlanCard(p, i + 1); });
 
-    return `<div style="background:var(--surface);border:1px solid var(--border);
-                        border-radius:var(--r);padding:18px 20px;margin-bottom:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;
-                    gap:24px;margin-bottom:14px;padding-bottom:12px;
-                    border-bottom:1px solid var(--border)">
+    // Card colourway (style.css .kc-card): matches the trade direction
+    const tone = first.direction === 'BUY' ? 'buy' : first.direction === 'SHORT' ? 'short' : '';
+    return `<div class="kc-card ${tone}">
+        <div class="kc-card-head">
             <div>
                 <span style="font-size:20px;font-weight:900;color:var(--text);
                              font-family:var(--font-mono);letter-spacing:1px">${escapeHtml(ticker)}</span>
@@ -537,9 +539,7 @@ function renderPlanCard(p, rank) {
     if (p.netDelta != null) metrics.push(detailMetric('Net Δ', p.netDelta.toFixed(3), '#60a5fa'));
     if (p.netTheta != null) metrics.push(detailMetric('Net Θ', p.netTheta.toFixed(2), '#a78bfa'));
 
-    return `<div style="background:var(--bg);border-radius:var(--r);
-                        border-left:3px solid ${scoreColor};
-                        padding:14px 16px;margin-bottom:10px">
+    return `<div class="kc-plan" style="border-left-color:${scoreColor}">
         <div style="display:flex;align-items:center;justify-content:space-between;
                     gap:16px;margin-bottom:10px">
             <div style="font-size:13px;font-weight:700;color:var(--text);
@@ -562,8 +562,8 @@ function renderPlanCard(p, rank) {
                     line-height:1.7;margin-bottom:10px">${legs}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
                     gap:12px;font-family:var(--font-mono);font-size:11px;
-                    padding:10px 0;border-top:1px solid var(--border);
-                    border-bottom:1px solid var(--border);margin-bottom:10px">
+                    padding:10px 0;border-top:1px solid rgba(var(--rd-rgb),.16);
+                    border-bottom:1px solid rgba(var(--rd-rgb),.16);margin-bottom:10px">
             ${metrics.join('')}
         </div>
         ${p.reasoning ? renderWhyBox(p.reasoning) : ''}

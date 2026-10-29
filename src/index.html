@@ -74,15 +74,22 @@
 
 <div class="page-wrap">
 
-    <div class="page-desc">
-        This page tracks candidates for a simple options income idea: sell a
-        put option every week and collect the payment, while a separate,
-        longer-lasting put option protects against a big drop. New to this?
-        Read the <a href="./help.html">Help &amp; Glossary</a> page first —
-        it explains the strategy and every term used below in plain language.
-        This is a research/tracking tool only — nothing here is financial
-        advice, and nothing is traded automatically.
-    </div>
+    <section class="hero">
+        <div class="hero-icon" aria-hidden="true">💰</div>
+        <div class="hero-body">
+            <div class="hero-eyebrow">Weekly options income</div>
+            <h1 class="hero-title">Sell a put every week. Keep a safety net.</h1>
+            <p class="hero-sub">
+                This page tracks candidates for a simple options income idea: sell a
+                put option every week and collect the payment, while a separate,
+                longer-lasting put option protects against a big drop.
+            </p>
+            <div class="hero-chips">
+                <a class="hero-chip info" href="./help.html">📘 New to this? Read the Help &amp; Glossary first</a>
+                <span class="hero-chip warn">⚠️ Research/tracking only — not financial advice, nothing is traded automatically</span>
+            </div>
+        </div>
+    </section>
 
     <div class="tabs">
         <button class="tab-btn active" data-tab="plans">📊 Options</button>
@@ -92,8 +99,13 @@
 
     <!-- ── Options tab ──────────────────────────────────────────────── -->
     <div class="tab-pane active" id="pane-plans">
-        <div class="meta-line" id="plans-meta">Loading…</div>
-        <input type="search" id="plans-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off"/>
+        <div class="pane-toolbar">
+            <div class="meta-line" id="plans-meta">Loading…</div>
+            <label class="filter-box">
+                <span class="filter-icon" aria-hidden="true">🔍</span>
+                <input type="search" id="plans-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off" aria-label="Filter by ticker"/>
+            </label>
+        </div>
 
         <div id="plans-title" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px"></div>
         <div id="plans-results"></div>
@@ -101,16 +113,26 @@
 
     <!-- ── Scanner tab ─────────────────────────────────────────────── -->
     <div class="tab-pane" id="pane-scanner">
-        <div class="meta-line" id="scanner-meta">Loading…</div>
-        <input type="search" id="scanner-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off"/>
+        <div class="pane-toolbar">
+            <div class="meta-line" id="scanner-meta">Loading…</div>
+            <label class="filter-box">
+                <span class="filter-icon" aria-hidden="true">🔍</span>
+                <input type="search" id="scanner-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off" aria-label="Filter by ticker"/>
+            </label>
+        </div>
         <div id="earnings-banner" style="display:none"></div>
         <div id="scanner-results"></div>
     </div>
 
     <!-- ── Tickers tab (Kaching Universe) ─────────────────────────────── -->
     <div class="tab-pane" id="pane-tickers">
-        <div class="meta-line" id="tickers-meta">Loading…</div>
-        <input type="search" id="tickers-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off"/>
+        <div class="pane-toolbar">
+            <div class="meta-line" id="tickers-meta">Loading…</div>
+            <label class="filter-box">
+                <span class="filter-icon" aria-hidden="true">🔍</span>
+                <input type="search" id="tickers-ticker-filter" class="ticker-filter" placeholder="Filter by ticker (e.g. BBY)" autocomplete="off" aria-label="Filter by ticker"/>
+            </label>
+        </div>
 
         <div id="universe-title" class="page-desc" style="margin-bottom:8px;font-weight:600"></div>
         <div class="universe-grid" id="universe-badges"></div>
